@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const ORG_ID = "TEMP_ORG_ID"; // 🔴 TEMP
+
 type Incident = {
     id: string;
     title: string;
@@ -13,17 +15,32 @@ export default function IncidentsPage() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
     useEffect(() => {
-        fetch("/api/incidents")
-            .then((res) => res.json())
-            .then(setIncidents);
+        fetch(`/api/organizations/${ORG_ID}/incidents`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text || "Failed to fetch incidents");
+                }
+                return res.json();
+            })
+            .then(setIncidents)
+            .catch((err) => {
+                console.error(err);
+                setIncidents([]);
+            });
     }, []);
 
     async function resolveIncident(id: string) {
         const res = await fetch(`/api/incidents/${id}`, {
             method: "PATCH",
         });
-        const updated = await res.json();
 
+        if (!res.ok) {
+            alert("Failed to resolve incident");
+            return;
+        }
+
+        const updated = await res.json();
         setIncidents((i) =>
             i.map((inc) => (inc.id === id ? updated : inc))
         );
@@ -33,11 +50,16 @@ export default function IncidentsPage() {
         const message = prompt("Update message?");
         if (!message) return;
 
-        await fetch(`/api/incidents/${id}/updates`, {
+        const res = await fetch(`/api/incidents/${id}/updates`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message }),
         });
+
+        if (!res.ok) {
+            alert("Failed to add update");
+            return;
+        }
 
         alert("Update added");
     }
@@ -59,6 +81,7 @@ export default function IncidentsPage() {
                             >
                                 Resolve
                             </button>
+
                             <button
                                 className="btn btn-sm btn-outline-primary"
                                 onClick={() => addUpdate(i.id)}

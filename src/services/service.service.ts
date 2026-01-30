@@ -13,6 +13,18 @@ export function getAllServices(organizationId: string) {
   });
 }
 
+export function getServicesByOrg(organizationId: string) {
+  return prisma.service.findMany({
+    where: { organizationId },
+    include: {
+      incidents: {
+        where: { isResolved: false },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 export function createService(
   organizationId: string,
   name: string,
