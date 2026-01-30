@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { resolveIncident } from "@/services/incident.service";
 
 export async function PATCH(
-  _: Request,
-  { params }: { params: { incidentId: string } }
+  _req: NextRequest,
+  context: { params: Promise<{ incidentId: string }> }
 ) {
-  const incident = await resolveIncident(params.incidentId);
+  const { incidentId } = await context.params;
+
+  const incident = await resolveIncident(incidentId);
   return NextResponse.json(incident);
 }
-
