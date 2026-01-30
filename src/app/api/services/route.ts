@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { createService } from "@/services/service.service";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -15,14 +15,14 @@ export async function POST(req: Request) {
 
     const { name, description } = await req.json();
 
-    if (!name) {
+    if (!name || typeof name !== "string") {
       return NextResponse.json(
         { error: "Name is required" },
         { status: 400 }
       );
     }
 
-    // TEMP: until org selector exists
+    // 🔴 TEMP — replace when org selector is implemented
     const organizationId = "TEMP_ORG_ID";
 
     const service = await createService(
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(service);
   } catch (err) {
-    console.error(err);
+    console.error("Create service error:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
