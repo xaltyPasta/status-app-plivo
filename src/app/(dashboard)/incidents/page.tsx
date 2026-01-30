@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const ORG_ID = "TEMP_ORG_ID"; // 🔴 TEMP
+const ORG_ID = "org1"; // 🔴 TEMP
 
 type Incident = {
     id: string;
@@ -15,7 +15,7 @@ export default function IncidentsPage() {
     const [incidents, setIncidents] = useState<Incident[]>([]);
 
     useEffect(() => {
-        fetch(`/api/organizations/${ORG_ID}/incidents`)
+        fetch(`/api/incidents`)
             .then(async (res) => {
                 if (!res.ok) {
                     const text = await res.text();

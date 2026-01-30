@@ -1,6 +1,6 @@
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "./primsa";
+import { prisma } from "../lib/primsa";
 
 export const authOptions: AuthOptions = {
   session: {
@@ -20,15 +20,14 @@ export const authOptions: AuthOptions = {
         await prisma.user.upsert({
           where: { email: user.email },
           update: {
-            name: user.name,
+            name: user.name ?? undefined,
           },
           create: {
             email: user.email,
-            name: user.name,
+            name: user.name ?? undefined,
           },
         });
       }
-
       return true;
     },
 
@@ -43,7 +42,6 @@ export const authOptions: AuthOptions = {
           token.userId = dbUser.id;
         }
       }
-
       return token;
     },
 
@@ -51,7 +49,6 @@ export const authOptions: AuthOptions = {
       if (session.user && token.userId) {
         session.user.id = token.userId as string;
       }
-
       return session;
     },
   },
@@ -60,4 +57,3 @@ export const authOptions: AuthOptions = {
     signIn: "/login",
   },
 };
-
