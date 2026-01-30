@@ -1,7 +1,7 @@
 import { prisma } from "./../lib/primsa";
 import { ServiceStatus } from "@prisma/client";
 
-export function getServicesByOrganization(organizationId: string) {
+export function getAllServices(organizationId: string) {
   return prisma.service.findMany({
     where: { organizationId },
     include: {
