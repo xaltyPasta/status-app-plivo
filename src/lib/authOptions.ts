@@ -25,7 +25,6 @@ export const authOptions: AuthOptions = {
           create: {
             email: user.email,
             name: user.name,
-            authProvider: "google",
           },
         });
       }
