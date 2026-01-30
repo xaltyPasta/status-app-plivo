@@ -15,8 +15,10 @@ model User {
   id        String   @id @default(cuid())
   name      String?
   email     String   @unique
-  password  String?
   role      Role     @default(USER)
+
+  memberships OrganizationMember[]
+  incidentUpdates IncidentUpdate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,21 +32,61 @@ enum Role {
 }
 
 /* ============================
-   STATUS PAGE MODELS
-   (we will use later)
+   ORGANIZATION (MULTI-TENANT)
+   ============================ */
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+
+  members   OrganizationMember[]
+  services  Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           OrgRole  @default(MEMBER)
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/* ============================
+   SERVICE MANAGEMENT
    ============================ */
 
 model Service {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  status      ServiceStatus @default(OPERATIONAL)
+  id             String        @id @default(cuid())
+  organizationId String
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  name            String
+  description     String?
+  status          ServiceStatus @default(OPERATIONAL)
 
-  incidents   Incident[]
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  incidents       Incident[]
 
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
   @@index([status])
 }
 
@@ -55,14 +97,21 @@ enum ServiceStatus {
   MAJOR_OUTAGE
 }
 
+/* ============================
+   INCIDENT / MAINTENANCE
+   ============================ */
+
 model Incident {
   id          String   @id @default(cuid())
+  serviceId   String
+
   title       String
   description String?
-  isResolved  Boolean  @default(false)
+  type        IncidentType @default(INCIDENT)
+  isResolved  Boolean      @default(false)
 
-  serviceId   String
-  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  service     Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  updates     IncidentUpdate[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -71,3 +120,27 @@ model Incident {
   @@index([isResolved])
 }
 
+enum IncidentType {
+  INCIDENT
+  MAINTENANCE
+}
+
+/* ============================
+   INCIDENT UPDATES (TIMELINE)
+   ============================ */
+
+model IncidentUpdate {
+  id         String   @id @default(cuid())
+  incidentId String
+  authorId   String
+
+  message    String
+  status     ServiceStatus?
+
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@index([incidentId])
+}
