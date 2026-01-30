@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from "../lib/primsa";
 
 export async function createOrganization(
   userId: string,

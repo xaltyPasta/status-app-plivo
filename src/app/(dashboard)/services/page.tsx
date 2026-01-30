@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { ServiceStatus } from "@prisma/client";
 
+// 🔴 TEMP – replace with org selector later
+const ORG_ID = "TEMP_ORG_ID";
+
 type Service = {
     id: string;
     name: string;
@@ -14,46 +17,93 @@ export default function ServicesPage() {
     const [services, setServices] = useState<Service[]>([]);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
+    const [loading, setLoading] = useState(false);
 
+    /* =========================
+       FETCH SERVICES
+       ========================= */
     useEffect(() => {
-        fetch("/api/services")
-            .then((res) => res.json())
-            .then(setServices);
+        fetch(`/api/organizations/${ORG_ID}/services`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(text || "Failed to fetch services");
+                }
+                return res.json();
+            })
+            .then(setServices)
+            .catch((err) => {
+                console.error("Fetch services error:", err);
+                setServices([]);
+            });
     }, []);
 
+    /* =========================
+       CREATE SERVICE
+       ========================= */
     async function createService() {
-        const res = await fetch("/api/services", {
+        if (!name.trim()) return alert("Service name is required");
+
+        setLoading(true);
+
+        const res = await fetch(`/api/organizations/${ORG_ID}/services`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, description }),
         });
+
+        setLoading(false);
+
+        if (!res.ok) {
+            const text = await res.text();
+            alert(text || "Failed to create service");
+            return;
+        }
+
         const service = await res.json();
         setServices((s) => [...s, service]);
         setName("");
         setDescription("");
     }
 
+    /* =========================
+       UPDATE STATUS
+       ========================= */
     async function updateStatus(id: string, status: ServiceStatus) {
         const res = await fetch(`/api/services/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status }),
         });
+
+        if (!res.ok) {
+            alert("Failed to update service status");
+            return;
+        }
+
         const updated = await res.json();
         setServices((s) =>
             s.map((svc) => (svc.id === id ? updated : svc))
         );
     }
 
+    /* =========================
+       CREATE INCIDENT
+       ========================= */
     async function createIncident(serviceId: string) {
         const title = prompt("Incident title?");
         if (!title) return;
 
-        await fetch("/api/incidents", {
+        const res = await fetch("/api/incidents", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ serviceId, title }),
         });
+
+        if (!res.ok) {
+            alert("Failed to create incident");
+            return;
+        }
 
         alert("Incident created");
     }
@@ -70,24 +120,30 @@ export default function ServicesPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                 />
+
                 <textarea
                     className="form-control mb-2"
                     placeholder="Description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                 />
-                <button className="btn btn-primary" onClick={createService}>
-                    Create Service
+
+                <button
+                    className="btn btn-primary"
+                    onClick={createService}
+                    disabled={loading}
+                >
+                    {loading ? "Creating..." : "Create Service"}
                 </button>
             </div>
 
             {/* Service List */}
             {services.map((s) => (
                 <div key={s.id} className="card p-3 mb-3">
-                    <div className="d-flex justify-content-between">
+                    <div className="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5>{s.name}</h5>
-                            <p className="text-muted">{s.description}</p>
+                            <h5 className="mb-1">{s.name}</h5>
+                            <p className="text-muted mb-0">{s.description}</p>
                         </div>
 
                         <select

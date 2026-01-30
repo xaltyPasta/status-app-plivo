@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db/prisma";
+import { prisma } from "../lib/primsa";
 import { OrgRole } from "@prisma/client";
 
 export function getOrganizationMembers(orgId: string) {
