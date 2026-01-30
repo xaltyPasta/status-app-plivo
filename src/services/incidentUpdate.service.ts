@@ -1,49 +1,44 @@
 import { prisma } from "../lib/primsa";
 import { ServiceStatus } from "@prisma/client";
 
-export function getServicesByOrganization(organizationId: string) {
-  return prisma.service.findMany({
-    where: { organizationId },
+/**
+ * Create a new update for an incident.
+ * Used for:
+ * - Posting progress updates
+ * - Status changes during incidents / maintenance
+ */
+export async function addIncidentUpdate(
+  incidentId: string,
+  authorId: string,
+  message: string,
+  status?: ServiceStatus
+) {
+  return prisma.incidentUpdate.create({
+    data: {
+      incidentId,
+      authorId,
+      message,
+      status,
+    },
+  });
+}
+
+/**
+ * Fetch all updates for a given incident
+ * Ordered oldest → newest (timeline view)
+ */
+export async function getIncidentUpdates(incidentId: string) {
+  return prisma.incidentUpdate.findMany({
+    where: { incidentId },
     include: {
-      incidents: {
-        where: { isResolved: false },
+      author: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
       },
     },
     orderBy: { createdAt: "asc" },
   });
 }
-
-export function createService(
-  organizationId: string,
-  name: string,
-  description?: string
-) {
-  return prisma.service.create({
-    data: {
-      organizationId,
-      name,
-      description,
-    },
-  });
-}
-
-export function updateService(
-  serviceId: string,
-  data: {
-    name?: string;
-    description?: string;
-    status?: ServiceStatus;
-  }
-) {
-  return prisma.service.update({
-    where: { id: serviceId },
-    data,
-  });
-}
-
-export function deleteService(serviceId: string) {
-  return prisma.service.delete({
-    where: { id: serviceId },
-  });
-}
-
