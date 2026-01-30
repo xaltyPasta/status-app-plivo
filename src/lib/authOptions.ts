@@ -51,6 +51,11 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+
+    async redirect({ baseUrl }) {
+      // ✅ force post-login redirect
+      return `${baseUrl}/status`;
+    },
   },
 
   pages: {
